@@ -4,6 +4,44 @@ Editor tool for browsing, installing, updating, and embedding packages from UPM 
 
 The main goal of this tool is to enable faster working with packages - Unity's built-in package manager doesn't offer any functionality to embed and work on packages, this tool makes it very easy and automated process.
 
+# Installation
+
+## Via Git URL
+
+Open **Window → Package Manager**, click **+**, and choose **Add package from git URL**.
+
+To install the latest version:
+```
+https://github.com/Warlander/registry-browser.git
+```
+
+To install a specific release, append the tag:
+```
+https://github.com/Warlander/registry-browser.git#1.0.0
+```
+
+## Via Scoped Registry
+
+Add the Warlogic registry to your `Packages/manifest.json`:
+
+```json
+{
+  "scopedRegistries": [
+    {
+      "name": "Warlogic",
+      "url": "https://upm.maciejcyranowicz.com",
+      "scopes": ["com.warlogic"]
+    }
+  ],
+  "dependencies": {
+    "com.warlogic.registrybrowser": "1.0.0"
+  }
+}
+```
+
+Alternatively, open **Window → Package Manager**, click **+**, choose
+**Add package by name**, and enter `com.warlogic.registrybrowser`.
+
 # Setup
 
 1. Open **Edit > Project Settings > Registry Browser**.
