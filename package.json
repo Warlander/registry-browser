@@ -1,0 +1,19 @@
+{
+  "name": "com.warlogic.registrybrowser",
+  "displayName": "Registry Browser",
+  "version": "1.0.0",
+  "unity": "2021.2",
+  "description": "Editor tool for browsing, installing, and embedding packages from UPM scoped registries",
+  "author": {
+    "name": "Maciej Cyranowicz",
+    "url": "https://github.com/Warlander"
+  },
+  "license": "MIT",
+  "documentationUrl": "https://github.com/Warlander/registry-browser/blob/master/README.md",
+  "changelogUrl": "https://github.com/Warlander/registry-browser/blob/master/CHANGELOG.md",
+  "licensesUrl": "https://github.com/Warlander/registry-browser/blob/master/LICENSE",
+  "repository": {
+    "url": "https://github.com/Warlander/registry-browser.git",
+    "type": "git"
+  }
+}
