@@ -51,8 +51,7 @@ namespace Warlogic.RegistryBrowser
 
                 File.WriteAllText(hookPath, HookContent, new UTF8Encoding(false));
 
-                if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-                    MakeExecutable(hookPath);
+                MakeExecutable(hookPath);
 
                 Debug.Log("[RegistryBrowser] Installed pre-commit hook to block commits with embedded packages.");
             }
