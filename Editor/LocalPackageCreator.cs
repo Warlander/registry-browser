@@ -66,7 +66,7 @@ namespace Warlogic.RegistryBrowser
             string asmBase = DeriveAssemblyBase(packageId);
 
             WriteFile(packageDir, "package.json", BuildPackageJson(packageId, displayName));
-            WriteFile(packageDir, "CHANGELOG.md", "# Changelog\n\n## [1.0.0]\n\n- Initial release\n");
+            WriteFile(packageDir, "CHANGELOG.md", ChangelogTemplate.GetTemplate());
             WriteFile(packageDir, "README.md", $"# {displayName}\n");
 
             string runtimeDir = CreateSubDir(packageDir, "Runtime");
