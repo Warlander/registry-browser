@@ -111,8 +111,15 @@ namespace Warlogic.RegistryBrowser
             versionLabel.style.fontSize = 10;
             versionLabel.style.whiteSpace = WhiteSpace.Normal;
 
+            var gitBranchLabel = new Label();
+            gitBranchLabel.name = "git-branch-label";
+            gitBranchLabel.style.fontSize = 10;
+            gitBranchLabel.style.whiteSpace = WhiteSpace.Normal;
+            gitBranchLabel.style.display = DisplayStyle.None;
+
             textContainer.Add(idLabel);
             textContainer.Add(versionLabel);
+            textContainer.Add(gitBranchLabel);
             container.Add(statusIcon);
             container.Add(textContainer);
             return container;
@@ -143,6 +150,18 @@ namespace Warlogic.RegistryBrowser
             {
                 versionLabel.text = summary.LatestVersion;
                 versionLabel.style.color = new UnityEngine.Color(0.6f, 0.6f, 0.6f);
+            }
+
+            Label gitBranchLabel = element.Q<Label>("git-branch-label");
+            if (!string.IsNullOrEmpty(summary.GitBranch))
+            {
+                gitBranchLabel.text = summary.GitBranch;
+                gitBranchLabel.style.color = new UnityEngine.Color(0.6f, 0.6f, 0.6f);
+                gitBranchLabel.style.display = DisplayStyle.Flex;
+            }
+            else
+            {
+                gitBranchLabel.style.display = DisplayStyle.None;
             }
 
             Label statusIcon = element.Q<Label>("status-icon");

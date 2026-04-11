@@ -9,8 +9,9 @@ namespace Warlogic.RegistryBrowser
         public string RegistryUrl { get; }
         public PackageInstallStatus Status { get; }
         public string InstalledVersion { get; }
+        public string GitBranch { get; }
 
-        public PackageSummary(string id, string displayName, string description, string latestVersion, string registryUrl, PackageInstallStatus status, string installedVersion)
+        public PackageSummary(string id, string displayName, string description, string latestVersion, string registryUrl, PackageInstallStatus status, string installedVersion, string gitBranch = null)
         {
             Id = id;
             DisplayName = displayName;
@@ -19,6 +20,7 @@ namespace Warlogic.RegistryBrowser
             RegistryUrl = registryUrl;
             Status = status;
             InstalledVersion = installedVersion;
+            GitBranch = gitBranch;
         }
     }
 }

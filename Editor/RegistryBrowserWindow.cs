@@ -158,6 +158,36 @@ namespace Warlogic.RegistryBrowser
             IReadOnlyList<PackageSummary> localPackages = await _apiClient.ScanLocalOnlyPackagesAsync(allPackages);
             allPackages.AddRange(localPackages);
 
+            var enrichTasks = new List<(int index, System.Threading.Tasks.Task<string> task)>();
+            for (int i = 0; i < allPackages.Count; i++)
+            {
+                PackageSummary pkg = allPackages[i];
+                bool isGitBacked = (pkg.Status == PackageInstallStatus.Embedded ||
+                                    pkg.Status == PackageInstallStatus.LocalOnly)
+                                   && GitEmbedOperations.HasGitRepo(pkg.Id);
+                if (isGitBacked)
+                    enrichTasks.Add((i, GitEmbedOperations.GetCurrentBranchAsync(pkg.Id)));
+            }
+            foreach ((int index, System.Threading.Tasks.Task<string> task) in enrichTasks)
+            {
+                try
+                {
+                    string branch = await task;
+                    if (!string.IsNullOrEmpty(branch))
+                    {
+                        PackageSummary old = allPackages[index];
+                        allPackages[index] = new PackageSummary(
+                            old.Id, old.DisplayName, old.Description,
+                            old.LatestVersion, old.RegistryUrl, old.Status,
+                            old.InstalledVersion, branch);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[RegistryBrowser] Could not read git branch for {allPackages[index].Id}: {ex.Message}");
+                }
+            }
+
             if (allPackages.Count == 0 && registries.Count == 0)
                 _listPanel.ShowNoRegistriesConfigured();
             else

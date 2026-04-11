@@ -21,6 +21,7 @@ namespace Warlogic.RegistryBrowser
         private Button _embedButton;
         private Button _deEmbedButton;
         private Button _deleteLocalButton;
+        private Button _initGitButton;
         private Label _displayNameLabel;
         private Label _idLabel;
         private Label _descriptionLabel;
@@ -94,6 +95,10 @@ namespace Warlogic.RegistryBrowser
             _deleteLocalButton = new Button(OnDeleteLocalPackageClicked) { text = "Delete package" };
             _deleteLocalButton.style.display = DisplayStyle.None;
             actionRow.Add(_deleteLocalButton);
+
+            _initGitButton = new Button(OnInitGitClicked) { text = "Initialize Git repository" };
+            _initGitButton.style.display = DisplayStyle.None;
+            actionRow.Add(_initGitButton);
 
             _displayNameLabel = new Label();
             _displayNameLabel.style.fontSize = 18;
@@ -226,6 +231,9 @@ namespace Warlogic.RegistryBrowser
             _deEmbedButton.SetEnabled(true);
             _deleteLocalButton.style.display = localOnly ? DisplayStyle.Flex : DisplayStyle.None;
             _deleteLocalButton.SetEnabled(true);
+            _initGitButton.style.display = (localOnly && !GitEmbedOperations.HasGitRepo(_currentSummary.Id))
+                ? DisplayStyle.Flex : DisplayStyle.None;
+            _initGitButton.SetEnabled(true);
         }
 
         private void OnAddToProjectClicked()
@@ -261,6 +269,27 @@ namespace Warlogic.RegistryBrowser
                 "Delete", "Cancel");
             if (confirmed)
                 _ = DeleteLocalPackageAsync();
+        }
+
+        private void OnInitGitClicked()
+        {
+            _ = InitGitAsync();
+        }
+
+        private async Task InitGitAsync()
+        {
+            _initGitButton.SetEnabled(false);
+            try
+            {
+                string packageDir = GitEmbedOperations.GetEmbedAbsolutePath(_currentSummary.Id);
+                await GitEmbedOperations.InitRepoAsync(packageDir);
+                _initGitButton.style.display = DisplayStyle.None;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[RegistryBrowser] Git init failed: {ex.Message}");
+                _initGitButton.SetEnabled(true);
+            }
         }
 
         private async Task DeleteLocalPackageAsync()

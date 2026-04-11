@@ -24,6 +24,18 @@ namespace Warlogic.RegistryBrowser
         public static bool IsEmbedded(string packageId)
             => Directory.Exists(GetEmbedAbsolutePath(packageId));
 
+        public static bool HasGitRepo(string packageId)
+            => Directory.Exists(Path.Combine(GetEmbedAbsolutePath(packageId), ".git"));
+
+        public static async Task<string> GetCurrentBranchAsync(string packageId)
+        {
+            string absPath = GetEmbedAbsolutePath(packageId);
+            if (!Directory.Exists(absPath))
+                return null;
+            string output = await RunGitOutputAsync("symbolic-ref --short HEAD", absPath);
+            return output.Trim();
+        }
+
         public static bool IsEmbedFolderInGitIgnore()
         {
             string gitIgnorePath = Path.Combine(GetProjectRoot(), ".gitignore");
