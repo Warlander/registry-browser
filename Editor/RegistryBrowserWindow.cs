@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEditor;
@@ -65,6 +66,13 @@ namespace Warlogic.RegistryBrowser
             refreshButton.Add(_refreshIcon);
             toolbar.Add(refreshButton);
 
+            var createButton = new Button(OnCreateNewPackageClicked) { text = "Create New Package" };
+            createButton.style.height = 28;
+            createButton.style.paddingLeft = 10;
+            createButton.style.paddingRight = 10;
+            createButton.style.marginLeft = 4;
+            toolbar.Add(createButton);
+
             var spacer = new VisualElement();
             spacer.style.flexGrow = 1;
             toolbar.Add(spacer);
@@ -89,6 +97,11 @@ namespace Warlogic.RegistryBrowser
         private static void OnRegistryConfigClicked()
         {
             SettingsService.OpenProjectSettings("Project/Registry Browser");
+        }
+
+        private void OnCreateNewPackageClicked()
+        {
+            CreateLocalPackageWindow.Open(OnPackageOperationCompleted);
         }
 
         private void OnRefreshClicked()
@@ -127,21 +140,28 @@ namespace Warlogic.RegistryBrowser
             _listPanel.ShowLoading();
             IReadOnlyList<RegistryScope> registries = RegistryBrowserConfig.LoadRegistries();
 
-            if (registries.Count == 0)
+            var allPackages = new List<PackageSummary>();
+
+            if (registries.Count > 0)
             {
-                _listPanel.ShowNoRegistriesConfigured();
-                return;
+                try
+                {
+                    IReadOnlyList<PackageSummary> registryPackages = await _apiClient.FetchPackagesAsync(registries);
+                    allPackages.AddRange(registryPackages);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[RegistryBrowser] Fetch failed: {ex}");
+                }
             }
 
-            try
-            {
-                IReadOnlyList<PackageSummary> packages = await _apiClient.FetchPackagesAsync(registries);
-                _listPanel.SetPackages(packages);
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"[RegistryBrowser] Fetch failed: {ex}");
-            }
+            IReadOnlyList<PackageSummary> localPackages = await _apiClient.ScanLocalOnlyPackagesAsync(allPackages);
+            allPackages.AddRange(localPackages);
+
+            if (allPackages.Count == 0 && registries.Count == 0)
+                _listPanel.ShowNoRegistriesConfigured();
+            else
+                _listPanel.SetPackages(allPackages);
         }
 
         private async void OnPackageSelected(PackageSummary summary)
@@ -155,7 +175,9 @@ namespace Warlogic.RegistryBrowser
                 return;
 
             _detailPanel.ShowLoading();
-            PackageDetails details = await _apiClient.FetchPackageDetailsAsync(summary.Id, summary.RegistryUrl);
+            PackageDetails details = summary.Status == PackageInstallStatus.LocalOnly
+                ? await _apiClient.FetchLocalPackageDetailsAsync(summary.Id)
+                : await _apiClient.FetchPackageDetailsAsync(summary.Id, summary.RegistryUrl);
             if (ct.IsCancellationRequested)
                 return;
 

@@ -43,5 +43,31 @@ namespace Warlogic.RegistryBrowser
                 count: 1);
             File.WriteAllText(ManifestPath, updated);
         }
+
+        public static void RemoveDependency(string packageId)
+        {
+            string content = File.ReadAllText(ManifestPath);
+            string escaped = Regex.Escape(packageId);
+
+            // Try removing as a non-last entry: "id": "value", (with trailing comma + whitespace)
+            var trailingCommaRegex = new Regex($@"\s*""{escaped}""\s*:\s*""[^""]*""\s*,");
+            string updated = trailingCommaRegex.Replace(content, "");
+
+            if (updated == content)
+            {
+                // Try removing as the last entry: preceding comma + "id": "value"
+                var leadingCommaRegex = new Regex($@",\s*""{escaped}""\s*:\s*""[^""]*""");
+                updated = leadingCommaRegex.Replace(content, "");
+            }
+
+            if (updated == content)
+            {
+                // Only entry: no comma on either side
+                var onlyEntryRegex = new Regex($@"\s*""{escaped}""\s*:\s*""[^""]*""");
+                updated = onlyEntryRegex.Replace(content, "");
+            }
+
+            File.WriteAllText(ManifestPath, updated);
+        }
     }
 }

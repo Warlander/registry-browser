@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
@@ -72,6 +73,69 @@ namespace Warlogic.RegistryBrowser
             }
 
             return summaries;
+        }
+
+        public Task<IReadOnlyList<PackageSummary>> ScanLocalOnlyPackagesAsync(IReadOnlyList<PackageSummary> registryPackages)
+        {
+            var result = new List<PackageSummary>();
+            string embedsRoot = Path.Combine(GitEmbedOperations.GetProjectRoot(), "Packages", "Embeds");
+
+            if (!Directory.Exists(embedsRoot))
+                return Task.FromResult<IReadOnlyList<PackageSummary>>(result);
+
+            var registryIds = new HashSet<string>();
+            foreach (PackageSummary p in registryPackages)
+                registryIds.Add(p.Id);
+
+            foreach (string dir in Directory.GetDirectories(embedsRoot))
+            {
+                string packageJsonPath = Path.Combine(dir, "package.json");
+                if (!File.Exists(packageJsonPath))
+                    continue;
+
+                string json = File.ReadAllText(packageJsonPath);
+                string id = ParsePackageJsonField(json, "name");
+                if (string.IsNullOrEmpty(id) || registryIds.Contains(id))
+                    continue;
+
+                string displayName = ParsePackageJsonField(json, "displayName");
+                string description = ParsePackageJsonField(json, "description");
+                string version = ParsePackageJsonField(json, "version");
+
+                if (string.IsNullOrEmpty(displayName))
+                    displayName = id;
+                if (string.IsNullOrEmpty(version))
+                    version = "1.0.0";
+
+                result.Add(new PackageSummary(id, displayName, description ?? "", version, "", PackageInstallStatus.LocalOnly, version));
+            }
+
+            return Task.FromResult<IReadOnlyList<PackageSummary>>(result);
+        }
+
+        public Task<PackageDetails> FetchLocalPackageDetailsAsync(string packageId)
+        {
+            string packageJsonPath = Path.Combine(GitEmbedOperations.GetEmbedAbsolutePath(packageId), "package.json");
+
+            if (!File.Exists(packageJsonPath))
+                return Task.FromResult(new PackageDetails(packageId, packageId, "", "1.0.0", Array.Empty<string>(), "", "", ""));
+
+            string json = File.ReadAllText(packageJsonPath);
+            string displayName = ParsePackageJsonField(json, "displayName");
+            string description = ParsePackageJsonField(json, "description");
+            string version = ParsePackageJsonField(json, "version");
+
+            if (string.IsNullOrEmpty(displayName)) displayName = packageId;
+            if (string.IsNullOrEmpty(version)) version = "1.0.0";
+
+            return Task.FromResult(new PackageDetails(packageId, displayName, description ?? "", version, Array.Empty<string>(), "", "", ""));
+        }
+
+        private static string ParsePackageJsonField(string json, string field)
+        {
+            var regex = new Regex($@"""{Regex.Escape(field)}""\s*:\s*""([^""\\]*)""");
+            Match match = regex.Match(json);
+            return match.Success ? match.Groups[1].Value : null;
         }
 
         public async Task<PackageDetails> FetchPackageDetailsAsync(string id, string registryUrl)

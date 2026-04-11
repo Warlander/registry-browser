@@ -20,12 +20,16 @@ namespace Warlogic.RegistryBrowser
         private Button _changeVersionButton;
         private Button _embedButton;
         private Button _deEmbedButton;
+        private Button _deleteLocalButton;
         private Label _displayNameLabel;
         private Label _idLabel;
         private Label _descriptionLabel;
         private Label _latestVersionLabel;
         private Label _repositoryLabel;
         private Label _registryUrlLabel;
+        private VisualElement _repositoryRow;
+        private VisualElement _registryRow;
+        private VisualElement _versionsSection;
         private VisualElement _versionsContainer;
 
         private PackageDetails _currentDetails;
@@ -87,6 +91,10 @@ namespace Warlogic.RegistryBrowser
             _deEmbedButton.style.display = DisplayStyle.None;
             actionRow.Add(_deEmbedButton);
 
+            _deleteLocalButton = new Button(OnDeleteLocalPackageClicked) { text = "Delete package" };
+            _deleteLocalButton.style.display = DisplayStyle.None;
+            actionRow.Add(_deleteLocalButton);
+
             _displayNameLabel = new Label();
             _displayNameLabel.style.fontSize = 18;
             _displayNameLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -98,16 +106,21 @@ namespace Warlogic.RegistryBrowser
             _latestVersionLabel = AddDetailRow(_detailContent, "Latest Version");
             _descriptionLabel = AddDetailRow(_detailContent, "Description");
             _repositoryLabel = AddDetailRow(_detailContent, "Repository");
+            _repositoryRow = _repositoryLabel.parent;
             _registryUrlLabel = AddDetailRow(_detailContent, "Registry");
+            _registryRow = _registryUrlLabel.parent;
+
+            _versionsSection = new VisualElement();
+            _detailContent.Add(_versionsSection);
 
             var versionsHeader = new Label("Versions");
             versionsHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
             versionsHeader.style.marginTop = 12;
             versionsHeader.style.marginBottom = 4;
-            _detailContent.Add(versionsHeader);
+            _versionsSection.Add(versionsHeader);
 
             _versionsContainer = new VisualElement();
-            _detailContent.Add(_versionsContainer);
+            _versionsSection.Add(_versionsContainer);
 
             return root;
         }
@@ -146,7 +159,9 @@ namespace Warlogic.RegistryBrowser
                 _latestVersionLabel.style.color = StyleKeyword.Null;
             }
             _repositoryLabel.text = details.RepositoryUrl;
+            _repositoryRow.style.display = string.IsNullOrEmpty(details.RepositoryUrl) ? DisplayStyle.None : DisplayStyle.Flex;
             _registryUrlLabel.text = details.RegistryUrl;
+            _registryRow.style.display = string.IsNullOrEmpty(details.RegistryUrl) ? DisplayStyle.None : DisplayStyle.Flex;
 
             _repositoryUrl = details.RepositoryUrl;
             _changelogUrl = details.ChangelogUrl;
@@ -154,6 +169,7 @@ namespace Warlogic.RegistryBrowser
             _changelogCache = null;
             _versionChangelogLabels.Clear();
             _versionsContainer.Clear();
+            _versionsSection.style.display = details.Versions.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
 
             UpdateActionButtons();
 
@@ -200,6 +216,7 @@ namespace Warlogic.RegistryBrowser
             bool notInProject = _currentSummary.Status == PackageInstallStatus.NotInProject;
             bool fromRegistry = _currentSummary.Status == PackageInstallStatus.InstalledFromRegistry;
             bool embedded = _currentSummary.Status == PackageInstallStatus.Embedded;
+            bool localOnly = _currentSummary.Status == PackageInstallStatus.LocalOnly;
 
             _addButton.style.display = notInProject ? DisplayStyle.Flex : DisplayStyle.None;
             _removeButton.style.display = fromRegistry ? DisplayStyle.Flex : DisplayStyle.None;
@@ -207,6 +224,8 @@ namespace Warlogic.RegistryBrowser
             _embedButton.style.display = (notInProject || fromRegistry) ? DisplayStyle.Flex : DisplayStyle.None;
             _deEmbedButton.style.display = embedded ? DisplayStyle.Flex : DisplayStyle.None;
             _deEmbedButton.SetEnabled(true);
+            _deleteLocalButton.style.display = localOnly ? DisplayStyle.Flex : DisplayStyle.None;
+            _deleteLocalButton.SetEnabled(true);
         }
 
         private void OnAddToProjectClicked()
@@ -232,6 +251,31 @@ namespace Warlogic.RegistryBrowser
         private void OnDeEmbedClicked()
         {
             _ = DeEmbedAsync();
+        }
+
+        private void OnDeleteLocalPackageClicked()
+        {
+            bool confirmed = EditorUtility.DisplayDialog(
+                "Delete local package?",
+                $"This will permanently delete \"{_currentSummary.DisplayName}\" from disk and remove it from the project manifest. This cannot be undone.",
+                "Delete", "Cancel");
+            if (confirmed)
+                _ = DeleteLocalPackageAsync();
+        }
+
+        private async Task DeleteLocalPackageAsync()
+        {
+            _deleteLocalButton.SetEnabled(false);
+            try
+            {
+                await GitEmbedOperations.RemoveEmbedAsync(_currentSummary.Id);
+                PackageManifestEditor.RemoveDependency(_currentSummary.Id);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[RegistryBrowser] Delete local package failed: {ex.Message}");
+            }
+            OnOperationCompleted();
         }
 
         private async Task DeEmbedAsync()

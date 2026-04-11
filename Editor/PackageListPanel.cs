@@ -163,6 +163,11 @@ namespace Warlogic.RegistryBrowser
                     statusIcon.style.color = new UnityEngine.Color(0.9f, 0.7f, 0.2f);
                     statusIcon.tooltip = "Package present in the project, embedded";
                     break;
+                case PackageInstallStatus.LocalOnly:
+                    statusIcon.text = "L";
+                    statusIcon.style.color = new UnityEngine.Color(0.5f, 0.7f, 0.9f);
+                    statusIcon.tooltip = "Local package (not in any registry)";
+                    break;
             }
         }
 

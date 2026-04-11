@@ -4,6 +4,7 @@ namespace Warlogic.RegistryBrowser
     {
         NotInProject,
         InstalledFromRegistry,
-        Embedded
+        Embedded,
+        LocalOnly
     }
 }
