@@ -12,6 +12,8 @@ Editor-only window for browsing, installing, and embedding UPM packages from sco
 - `LocalPackageCreator` — scaffolds full package tree with `.asmdef` and `.meta` files; `DeriveAssemblyBase()` skips TLD prefixes (`com`, `org`, etc.)
 - `RegistryBrowserConfig` — reads/writes `ProjectSettings/RegistryBrowserConfig.json`; also a `SettingsProvider`
 - `RegistryBrowserGitHookInstaller` — `[InitializeOnLoad]` auto-installs pre-commit hook blocking commits while any package is embedded
+- `PackagePublishOperations` — validation, `Client.Pack`, and `npm publish`/`npm unpublish` via Process
+- `PackagePublishWindow` — modal for confirming publish (version display, optional registry selector)
 - `PackageVersionSelectorWindow` / `EmbedSelectorWindow` — modals for picking a version or git commit
 - `PackageManagerWarningExtension` — `IPackageManagerExtension` warning banner in Unity's built-in Package Manager (cosmetic only, can be disabled)
 - `PackageVersionComparator` — semver comparison returning `VersionUpdateLevel` (None/Patch/Minor/Major) for color-coding
@@ -26,3 +28,4 @@ Editor-only window for browsing, installing, and embedding UPM packages from sco
 - **Pre-commit hook:** only reinstalled if content differs — change the string in `RegistryBrowserGitHookInstaller` when updating hook logic
 - **UI:** UIElements only (`VisualElement` in C#, no UXML)
 - **Config:** `ProjectSettings/RegistryBrowserConfig.json` (per-project, commit to VCS)
+- **Organization ID:** Intentionally stored in `EditorPrefs` (per-user) rather than the project JSON config — see `RegistryBrowserConfig.LoadOrganizationId()`

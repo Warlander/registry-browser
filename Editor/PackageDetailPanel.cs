@@ -22,6 +22,7 @@ namespace Warlogic.RegistryBrowser
         private Button _deEmbedButton;
         private Button _deleteLocalButton;
         private Button _initGitButton;
+        private Button _publishButton;
         private Label _displayNameLabel;
         private Label _idLabel;
         private Label _descriptionLabel;
@@ -99,6 +100,10 @@ namespace Warlogic.RegistryBrowser
             _initGitButton = new Button(OnInitGitClicked) { text = "Initialize Git repository" };
             _initGitButton.style.display = DisplayStyle.None;
             actionRow.Add(_initGitButton);
+
+            _publishButton = new Button(OnPublishClicked) { text = "Publish" };
+            _publishButton.style.display = DisplayStyle.None;
+            actionRow.Add(_publishButton);
 
             _displayNameLabel = new Label();
             _displayNameLabel.style.fontSize = 18;
@@ -234,6 +239,8 @@ namespace Warlogic.RegistryBrowser
             _initGitButton.style.display = (localOnly && !GitEmbedOperations.HasGitRepo(_currentSummary.Id))
                 ? DisplayStyle.Flex : DisplayStyle.None;
             _initGitButton.SetEnabled(true);
+            _publishButton.style.display = (localOnly || embedded) ? DisplayStyle.Flex : DisplayStyle.None;
+            _publishButton.SetEnabled(true);
         }
 
         private void OnAddToProjectClicked()
@@ -289,6 +296,57 @@ namespace Warlogic.RegistryBrowser
             {
                 Debug.LogError($"[RegistryBrowser] Git init failed: {ex.Message}");
                 _initGitButton.SetEnabled(true);
+            }
+        }
+
+        private void OnPublishClicked()
+        {
+            _publishButton.SetEnabled(false);
+            _ = PublishAsync();
+        }
+
+        private async Task PublishAsync()
+        {
+            try
+            {
+                IReadOnlyList<RegistryScope> registries = RegistryBrowserConfig.LoadRegistries();
+                PublishPreflightResult preflight = await PackagePublishOperations.RunPreflightAsync(
+                    _currentSummary.Id, _currentDetails, registries);
+
+                if (!preflight.CanPublish)
+                {
+                    EditorUtility.DisplayDialog("Cannot Publish", preflight.ErrorMessage, "OK");
+                    _publishButton.SetEnabled(true);
+                    return;
+                }
+
+                if (preflight.IsRepublish)
+                {
+                    bool confirm = EditorUtility.DisplayDialog(
+                        "Republish Version?",
+                        $"Version {preflight.LocalVersion} already exists on the registry. " +
+                        "Publishing will unpublish the existing version first. Continue?",
+                        "Republish", "Cancel");
+                    if (!confirm)
+                    {
+                        _publishButton.SetEnabled(true);
+                        return;
+                    }
+                }
+
+                PackagePublishWindow.Open(
+                    _currentSummary.Id,
+                    _currentSummary.DisplayName,
+                    preflight.LocalVersion,
+                    preflight.IsRepublish,
+                    preflight.CandidateRegistries,
+                    preflight.RegistryUrl,
+                    OnOperationCompleted);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[RegistryBrowser] Publish preflight failed: {ex.Message}");
+                _publishButton.SetEnabled(true);
             }
         }
 

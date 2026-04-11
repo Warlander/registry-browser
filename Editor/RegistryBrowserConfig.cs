@@ -9,6 +9,16 @@ namespace Warlogic.RegistryBrowser
     public static class RegistryBrowserConfig
     {
         private const string SettingsFilePath = "ProjectSettings/RegistryBrowserConfig.json";
+        private const string OrgIdEditorPrefsKey = "RegistryBrowser_OrganizationId";
+
+        // Organization ID is intentionally stored in EditorPrefs (per-machine, per-user)
+        // rather than the shared ProjectSettings JSON, because it may differ between team
+        // members and should not be committed to version control.
+        public static string LoadOrganizationId()
+            => EditorPrefs.GetString(OrgIdEditorPrefsKey, "");
+
+        public static void SaveOrganizationId(string value)
+            => EditorPrefs.SetString(OrgIdEditorPrefsKey, value ?? "");
 
         [Serializable]
         private class SettingsData
@@ -114,7 +124,20 @@ namespace Warlogic.RegistryBrowser
                     EditorGUILayout.Space(4);
 
                     bool newShowWarning = EditorGUILayout.ToggleLeft("Show Warning for Managed Packages", settings.showPackageManagerWarning);
-                    EditorGUILayout.Space(8);
+                    EditorGUILayout.Space(12);
+
+                    EditorGUILayout.LabelField("Publishing", EditorStyles.boldLabel);
+                    EditorGUILayout.Space(4);
+
+                    string currentOrgId = LoadOrganizationId();
+                    string newOrgId = EditorGUILayout.TextField("Organization ID", currentOrgId);
+                    if (newOrgId != currentOrgId)
+                        SaveOrganizationId(newOrgId);
+                    EditorGUILayout.HelpBox(
+                        "Used as the organization scope when packing packages. " +
+                        "Stored per-user in EditorPrefs, not in the shared project config.",
+                        MessageType.Info);
+                    EditorGUILayout.Space(12);
 
                     EditorGUILayout.LabelField("Tracked Registries", EditorStyles.boldLabel);
                     EditorGUILayout.Space(4);
