@@ -103,7 +103,7 @@ namespace Warlogic.RegistryBrowser
             }
         }
 
-        private void OnCreateClicked()
+        private async void OnCreateClicked()
         {
             string packageId = _packageIdField.value;
             string displayName = LocalPackageCreator.DeriveDisplayName(packageId);
@@ -118,7 +118,8 @@ namespace Warlogic.RegistryBrowser
 
             try
             {
-                LocalPackageCreator.CreatePackage(packageId, displayName);
+                bool initGit = RegistryBrowserConfig.LoadInitGitForNewPackages();
+                await LocalPackageCreator.CreatePackageAsync(packageId, displayName, initGit);
                 _onCreated?.Invoke();
                 Close();
             }

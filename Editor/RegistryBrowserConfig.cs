@@ -15,6 +15,7 @@ namespace Warlogic.RegistryBrowser
         {
             public bool showPackageManagerWarning = true;
             public bool gitIgnorePromptShown = false;
+            public bool initGitForNewPackages = true;
             public List<RegistryScope> registries = new();
         }
 
@@ -36,6 +37,15 @@ namespace Warlogic.RegistryBrowser
             return data?.showPackageManagerWarning ?? true;
         }
 
+        public static bool LoadInitGitForNewPackages()
+        {
+            if (!File.Exists(SettingsFilePath))
+                return true;
+
+            SettingsData data = JsonUtility.FromJson<SettingsData>(File.ReadAllText(SettingsFilePath));
+            return data?.initGitForNewPackages ?? true;
+        }
+
         public static bool LoadGitIgnorePromptShown()
         {
             if (!File.Exists(SettingsFilePath))
@@ -48,22 +58,25 @@ namespace Warlogic.RegistryBrowser
         public static void MarkGitIgnorePromptShown()
         {
             bool showWarning = LoadShowPackageManagerWarning();
+            bool initGit = LoadInitGitForNewPackages();
             var registries = new List<RegistryScope>(LoadRegistries());
             var data = new SettingsData
             {
                 showPackageManagerWarning = showWarning,
                 gitIgnorePromptShown = true,
+                initGitForNewPackages = initGit,
                 registries = registries,
             };
             File.WriteAllText(SettingsFilePath, JsonUtility.ToJson(data, true));
         }
 
-        private static void Save(bool showPackageManagerWarning, bool gitIgnorePromptShown, List<RegistryScope> registries)
+        private static void Save(bool showPackageManagerWarning, bool gitIgnorePromptShown, bool initGitForNewPackages, List<RegistryScope> registries)
         {
             var data = new SettingsData
             {
                 showPackageManagerWarning = showPackageManagerWarning,
                 gitIgnorePromptShown = gitIgnorePromptShown,
+                initGitForNewPackages = initGitForNewPackages,
                 registries = registries,
             };
             File.WriteAllText(SettingsFilePath, JsonUtility.ToJson(data, true));
@@ -75,6 +88,7 @@ namespace Warlogic.RegistryBrowser
             List<RegistryScope> editing = null;
             bool showWarning = true;
             bool gitIgnorePromptShown = false;
+            bool initGitForNewPackages = true;
             bool? gitIgnoreInPlace = null;
 
             var provider = new SettingsProvider("Project/Registry Browser", SettingsScope.Project)
@@ -87,6 +101,7 @@ namespace Warlogic.RegistryBrowser
                         editing = new List<RegistryScope>(LoadRegistries());
                         showWarning = LoadShowPackageManagerWarning();
                         gitIgnorePromptShown = LoadGitIgnorePromptShown();
+                        initGitForNewPackages = LoadInitGitForNewPackages();
                     }
 
                     if (gitIgnoreInPlace == null)
@@ -109,6 +124,12 @@ namespace Warlogic.RegistryBrowser
 
                     EditorGUILayout.Space(12);
 
+                    EditorGUILayout.LabelField("Local Package Creation", EditorStyles.boldLabel);
+                    EditorGUILayout.Space(4);
+
+                    bool newInitGit = EditorGUILayout.ToggleLeft("Initialize Git Repository for New Packages", initGitForNewPackages);
+                    EditorGUILayout.Space(12);
+
                     EditorGUILayout.LabelField("Package Manager Integration", EditorStyles.boldLabel);
                     EditorGUILayout.Space(4);
 
@@ -118,8 +139,9 @@ namespace Warlogic.RegistryBrowser
                     EditorGUILayout.LabelField("Tracked Registries", EditorStyles.boldLabel);
                     EditorGUILayout.Space(4);
 
-                    bool changed = newShowWarning != showWarning;
+                    bool changed = newShowWarning != showWarning || newInitGit != initGitForNewPackages;
                     showWarning = newShowWarning;
+                    initGitForNewPackages = newInitGit;
                     int removeIndex = -1;
 
                     for (int i = 0; i < editing.Count; i++)
@@ -155,7 +177,7 @@ namespace Warlogic.RegistryBrowser
                     }
 
                     if (changed)
-                        Save(showWarning, gitIgnorePromptShown, editing);
+                        Save(showWarning, gitIgnorePromptShown, initGitForNewPackages, editing);
                 }
             };
 

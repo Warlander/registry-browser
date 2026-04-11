@@ -52,6 +52,9 @@ namespace Warlogic.RegistryBrowser
             File.WriteAllText(gitIgnorePath, existing);
         }
 
+        public static Task InitRepoAsync(string packageDir)
+            => RunGitAsync("init", packageDir);
+
         public static async Task CloneAndCheckoutAsync(string packageId, string repoUrl, string commitSha)
         {
             string projectRoot = GetProjectRoot();

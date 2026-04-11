@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Warlogic.RegistryBrowser
 {
@@ -47,7 +48,7 @@ namespace Warlogic.RegistryBrowser
             return parts.Count > 0 ? string.Join(".", parts) : packageId;
         }
 
-        public static void CreatePackage(string packageId, string displayName)
+        public static async Task CreatePackageAsync(string packageId, string displayName, bool initGit)
         {
             string projectRoot = GitEmbedOperations.GetProjectRoot();
             string packageDir = GitEmbedOperations.GetEmbedAbsolutePath(packageId);
@@ -83,6 +84,9 @@ namespace Warlogic.RegistryBrowser
             WriteFile(testsEditorDir, $"{asmBase}.Editor.Tests.asmdef", BuildAsmdef($"{asmBase}.Editor.Tests", new[] { asmBase, $"{asmBase}.Editor" }, true, true));
 
             PackageManifestEditor.AddOrUpdateDependency(packageId, $"file:Embeds/{packageId}");
+
+            if (initGit)
+                await GitEmbedOperations.InitRepoAsync(packageDir);
         }
 
         private static string BuildPackageJson(string packageId, string displayName)
