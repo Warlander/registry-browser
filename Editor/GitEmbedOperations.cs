@@ -68,7 +68,9 @@ namespace Warlogic.RegistryBrowser
                 DeleteDirectoryForce(absPath);
 
             await RunGitAsync($"clone {QuoteArg(cleanUrl)} {QuoteArg(relativePath)}", projectRoot);
-            await RunGitAsync($"checkout {commitSha}", absPath);
+            // Use -B to create (or reset) a local branch at the chosen commit so the repo is never in
+            // detached HEAD state — commits made inside the embed can then be pushed normally.
+            await RunGitAsync($"checkout -B master {commitSha}", absPath);
         }
 
         public static async Task<bool> EmbedHasChangesAsync(string packageId)
