@@ -19,76 +19,59 @@ namespace Warlogic.RegistryBrowser
             public List<RegistryScope> registries = new();
         }
 
-        public static IReadOnlyList<RegistryScope> LoadRegistries()
-        {
-            if (!File.Exists(SettingsFilePath))
-                return Array.Empty<RegistryScope>();
+        private static SettingsData _settings;
 
-            SettingsData data = JsonUtility.FromJson<SettingsData>(File.ReadAllText(SettingsFilePath));
-            return data?.registries ?? new List<RegistryScope>();
+        private static SettingsData Settings
+        {
+            get
+            {
+                if (_settings != null)
+                    return _settings;
+
+                if (File.Exists(SettingsFilePath))
+                {
+                    SettingsData data = JsonUtility.FromJson<SettingsData>(File.ReadAllText(SettingsFilePath));
+                    if (data != null)
+                    {
+                        _settings = data;
+                        return _settings;
+                    }
+                }
+
+                // File missing or unreadable — create defaults and persist them.
+                _settings = new SettingsData();
+                Save();
+                return _settings;
+            }
         }
+
+        private static void Save()
+        {
+            File.WriteAllText(SettingsFilePath, JsonUtility.ToJson(_settings, true));
+        }
+
+        public static IReadOnlyList<RegistryScope> LoadRegistries()
+            => Settings.registries;
 
         public static bool LoadShowPackageManagerWarning()
-        {
-            if (!File.Exists(SettingsFilePath))
-                return true;
-
-            SettingsData data = JsonUtility.FromJson<SettingsData>(File.ReadAllText(SettingsFilePath));
-            return data?.showPackageManagerWarning ?? true;
-        }
+            => Settings.showPackageManagerWarning;
 
         public static bool LoadInitGitForNewPackages()
-        {
-            if (!File.Exists(SettingsFilePath))
-                return true;
-
-            SettingsData data = JsonUtility.FromJson<SettingsData>(File.ReadAllText(SettingsFilePath));
-            return data?.initGitForNewPackages ?? true;
-        }
+            => Settings.initGitForNewPackages;
 
         public static bool LoadGitIgnorePromptShown()
-        {
-            if (!File.Exists(SettingsFilePath))
-                return false;
-
-            SettingsData data = JsonUtility.FromJson<SettingsData>(File.ReadAllText(SettingsFilePath));
-            return data?.gitIgnorePromptShown ?? false;
-        }
+            => Settings.gitIgnorePromptShown;
 
         public static void MarkGitIgnorePromptShown()
         {
-            bool showWarning = LoadShowPackageManagerWarning();
-            bool initGit = LoadInitGitForNewPackages();
-            var registries = new List<RegistryScope>(LoadRegistries());
-            var data = new SettingsData
-            {
-                showPackageManagerWarning = showWarning,
-                gitIgnorePromptShown = true,
-                initGitForNewPackages = initGit,
-                registries = registries,
-            };
-            File.WriteAllText(SettingsFilePath, JsonUtility.ToJson(data, true));
-        }
-
-        private static void Save(bool showPackageManagerWarning, bool gitIgnorePromptShown, bool initGitForNewPackages, List<RegistryScope> registries)
-        {
-            var data = new SettingsData
-            {
-                showPackageManagerWarning = showPackageManagerWarning,
-                gitIgnorePromptShown = gitIgnorePromptShown,
-                initGitForNewPackages = initGitForNewPackages,
-                registries = registries,
-            };
-            File.WriteAllText(SettingsFilePath, JsonUtility.ToJson(data, true));
+            Settings.gitIgnorePromptShown = true;
+            Save();
         }
 
         [SettingsProvider]
         private static SettingsProvider CreateSettingsProvider()
         {
             List<RegistryScope> editing = null;
-            bool showWarning = true;
-            bool gitIgnorePromptShown = false;
-            bool initGitForNewPackages = true;
             bool? gitIgnoreInPlace = null;
 
             var provider = new SettingsProvider("Project/Registry Browser", SettingsScope.Project)
@@ -96,13 +79,10 @@ namespace Warlogic.RegistryBrowser
                 label = "Registry Browser",
                 guiHandler = _ =>
                 {
+                    SettingsData settings = Settings;
+
                     if (editing == null)
-                    {
-                        editing = new List<RegistryScope>(LoadRegistries());
-                        showWarning = LoadShowPackageManagerWarning();
-                        gitIgnorePromptShown = LoadGitIgnorePromptShown();
-                        initGitForNewPackages = LoadInitGitForNewPackages();
-                    }
+                        editing = new List<RegistryScope>(settings.registries);
 
                     if (gitIgnoreInPlace == null)
                         gitIgnoreInPlace = GitEmbedOperations.IsEmbedFolderInGitIgnore();
@@ -127,21 +107,21 @@ namespace Warlogic.RegistryBrowser
                     EditorGUILayout.LabelField("Local Package Creation", EditorStyles.boldLabel);
                     EditorGUILayout.Space(4);
 
-                    bool newInitGit = EditorGUILayout.ToggleLeft("Initialize Git Repository for New Packages", initGitForNewPackages);
+                    bool newInitGit = EditorGUILayout.ToggleLeft("Initialize Git Repository for New Packages", settings.initGitForNewPackages);
                     EditorGUILayout.Space(12);
 
                     EditorGUILayout.LabelField("Package Manager Integration", EditorStyles.boldLabel);
                     EditorGUILayout.Space(4);
 
-                    bool newShowWarning = EditorGUILayout.ToggleLeft("Show Warning for Managed Packages", showWarning);
+                    bool newShowWarning = EditorGUILayout.ToggleLeft("Show Warning for Managed Packages", settings.showPackageManagerWarning);
                     EditorGUILayout.Space(8);
 
                     EditorGUILayout.LabelField("Tracked Registries", EditorStyles.boldLabel);
                     EditorGUILayout.Space(4);
 
-                    bool changed = newShowWarning != showWarning || newInitGit != initGitForNewPackages;
-                    showWarning = newShowWarning;
-                    initGitForNewPackages = newInitGit;
+                    bool changed = newShowWarning != settings.showPackageManagerWarning || newInitGit != settings.initGitForNewPackages;
+                    settings.showPackageManagerWarning = newShowWarning;
+                    settings.initGitForNewPackages = newInitGit;
                     int removeIndex = -1;
 
                     for (int i = 0; i < editing.Count; i++)
@@ -177,7 +157,10 @@ namespace Warlogic.RegistryBrowser
                     }
 
                     if (changed)
-                        Save(showWarning, gitIgnorePromptShown, initGitForNewPackages, editing);
+                    {
+                        settings.registries = editing;
+                        Save();
+                    }
                 }
             };
 
