@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -200,14 +201,16 @@ namespace Warlogic.RegistryBrowser
             _selectionCts = new CancellationTokenSource();
             CancellationToken ct = _selectionCts.Token;
 
+            Task<PackageDetails> fetchTask = summary.Status == PackageInstallStatus.LocalOnly
+                ? _apiClient.FetchLocalPackageDetailsAsync(summary.Id)
+                : _apiClient.FetchPackageDetailsAsync(summary.Id, summary.RegistryUrl);
+
             await _detailPanel.FadeOutAsync(ct);
             if (ct.IsCancellationRequested)
                 return;
 
             _detailPanel.ShowLoading();
-            PackageDetails details = summary.Status == PackageInstallStatus.LocalOnly
-                ? await _apiClient.FetchLocalPackageDetailsAsync(summary.Id)
-                : await _apiClient.FetchPackageDetailsAsync(summary.Id, summary.RegistryUrl);
+            PackageDetails details = await fetchTask;
             if (ct.IsCancellationRequested)
                 return;
 
