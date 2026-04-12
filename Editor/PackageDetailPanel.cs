@@ -86,6 +86,7 @@ namespace Warlogic.RegistryBrowser
             actionRow.Add(_addButton);
 
             _removeButton = new Button(OnRemoveFromProjectClicked) { text = "Remove from project" };
+            _removeButton.style.backgroundColor = new Color(0.38f, 0.25f, 0.25f);
             _removeButton.style.display = DisplayStyle.None;
             actionRow.Add(_removeButton);
 
@@ -342,6 +343,7 @@ namespace Warlogic.RegistryBrowser
                     }
                 }
 
+                bool isCurrentlyEmbedded = _currentSummary?.Status == PackageInstallStatus.Embedded;
                 PackagePublishWindow.Open(
                     _currentSummary.Id,
                     _currentSummary.DisplayName,
@@ -350,7 +352,13 @@ namespace Warlogic.RegistryBrowser
                     preflight.IsRepublish,
                     preflight.CandidateRegistries,
                     preflight.RegistryUrl,
-                    OnOperationCompleted);
+                    (publishedVersion) =>
+                    {
+                        if (publishedVersion != null && isCurrentlyEmbedded)
+                            _ = PerformDeEmbedAsync(publishedVersion);
+                        else
+                            OnOperationCompleted();
+                    });
             }
             catch (Exception ex)
             {

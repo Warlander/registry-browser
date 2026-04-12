@@ -16,14 +16,14 @@ namespace Warlogic.RegistryBrowser
         private bool _isRepublish;
         private IReadOnlyList<RegistryScope> _candidateRegistries;
         private string _preselectedRegistryUrl;
-        private Action _onPublishCompleted;
+        private Action<string> _onPublishCompleted;
 
         private bool _confirmed;
         private PopupField<string> _registryDropdown;
 
         public static void Open(string packageId, string displayName, string localVersion,
             string currentRegistryVersion, bool isRepublish, IReadOnlyList<RegistryScope> candidateRegistries,
-            string preselectedRegistryUrl, Action onPublishCompleted)
+            string preselectedRegistryUrl, Action<string> onPublishCompleted)
         {
             var window = CreateInstance<PackagePublishWindow>();
             window._packageId = packageId;
@@ -123,7 +123,7 @@ namespace Warlogic.RegistryBrowser
             string packageId = _packageId;
             string version = _localVersion;
             bool isRepublish = _isRepublish;
-            Action callback = _onPublishCompleted;
+            Action<string> callback = _onPublishCompleted;
 
             Close();
 
@@ -138,7 +138,7 @@ namespace Warlogic.RegistryBrowser
         private void OnDestroy()
         {
             if (!_confirmed)
-                _onPublishCompleted?.Invoke();
+                _onPublishCompleted?.Invoke(null);
         }
 
         private string ResolveRegistryUrl()
@@ -156,8 +156,9 @@ namespace Warlogic.RegistryBrowser
         }
 
         private static async Task PerformPublishAsync(string packageId, string version,
-            bool isRepublish, string registryUrl, Action callback)
+            bool isRepublish, string registryUrl, Action<string> callback)
         {
+            bool publishSucceeded = false;
             try
             {
                 if (isRepublish)
@@ -172,6 +173,7 @@ namespace Warlogic.RegistryBrowser
                 EditorUtility.DisplayProgressBar("Publishing", "Publishing to registry\u2026", 0.7f);
                 await PackagePublishOperations.NpmPublishAsync(tarballPath, registryUrl);
 
+                publishSucceeded = true;
                 EditorUtility.ClearProgressBar();
                 EditorUtility.DisplayDialog("Published",
                     $"Successfully published {packageId}@{version} to {registryUrl}.", "OK");
@@ -182,8 +184,10 @@ namespace Warlogic.RegistryBrowser
                 Debug.LogError($"[RegistryBrowser] Publish failed: {ex.Message}");
                 EditorUtility.DisplayDialog("Publish Failed", ex.Message, "OK");
             }
-
-            callback?.Invoke();
+            finally
+            {
+                callback?.Invoke(publishSucceeded ? version : null);
+            }
         }
 
         private static void AddInfoRow(VisualElement parent, string label, string value)
