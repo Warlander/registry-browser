@@ -42,6 +42,17 @@ Add the Warlogic registry to your `Packages/manifest.json`:
 Alternatively, open **Window → Package Manager**, click **+**, choose
 **Add package by name**, and enter `com.warlogic.registrybrowser`.
 
+# Prerequisites
+
+- **Git** — must be installed and available on your system `PATH`. Used for all embed and de-embed operations (cloning repositories, checking out commits, checking dirty state). No specific version requirement.
+
+## Publishing Tools
+
+The following are only required if you intend to publish packages to a registry from within the tool. Basic browsing, installing, and embedding do not require them.
+
+- **npm** — must be installed and available on `PATH`. On Windows it is invoked via `cmd /c npm`; on other platforms it is called directly.
+- **npm registry authentication** — the target registry must already be authenticated in your `.npmrc` (e.g. via `npm login --registry <url>` or a pre-configured auth token). The tool passes `--registry <url>` to npm commands but does not manage authentication itself.
+
 # Setup
 
 1. Open **Edit > Project Settings > Registry Browser**.
