@@ -1,7 +1,7 @@
 {
   "name": "com.warlogic.registrybrowser",
   "displayName": "Registry Browser",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "unity": "2021.2",
   "description": "Editor tool for browsing, installing, and embedding packages from UPM scoped registries",
   "author": {
