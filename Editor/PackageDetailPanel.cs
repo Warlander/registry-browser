@@ -342,7 +342,7 @@ namespace Warlogic.RegistryBrowser
                         return;
                     }
                 }
-
+                
                 bool isCurrentlyEmbedded = _currentSummary.Status == PackageInstallStatus.Embedded;
                 PackagePublishWindow.Open(
                     _currentSummary.Id,
