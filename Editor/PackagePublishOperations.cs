@@ -44,9 +44,6 @@ namespace Warlogic.RegistryBrowser
     public static class PackagePublishOperations
     {
         private static readonly HttpClient HttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-        private static readonly Regex VersionKeyRegex = new Regex(
-            @"""(\d+\.\d+(?:\.\d+)?)""\s*:",
-            RegexOptions.Compiled);
 
         private const string PackOutputRelativePath = "Library/RegistryBrowser/Pack";
 
@@ -107,9 +104,13 @@ namespace Warlogic.RegistryBrowser
 
             // 5. Check if version already exists on registry
             bool isRepublish = false;
-            if (!string.IsNullOrEmpty(registryUrl))
+            foreach (string v in details.Versions)
             {
-                isRepublish = await VersionExistsOnRegistryAsync(packageId, localVersion, registryUrl);
+                if (v == localVersion)
+                {
+                    isRepublish = true;
+                    break;
+                }
             }
 
             return PublishPreflightResult.Success(localVersion, isRepublish, candidates, registryUrl);
@@ -151,30 +152,6 @@ namespace Warlogic.RegistryBrowser
                     matches.Add(registry);
             }
             return matches;
-        }
-
-        private static async Task<bool> VersionExistsOnRegistryAsync(
-            string packageId, string version, string registryUrl)
-        {
-            try
-            {
-                string url = registryUrl.TrimEnd('/') + "/" + packageId;
-                HttpResponseMessage response = await HttpClient.GetAsync(url);
-                if (!response.IsSuccessStatusCode)
-                    return false;
-
-                string json = await response.Content.ReadAsStringAsync();
-
-                // Look for the version as a key inside the "versions" object.
-                // A simple check: the exact version string appears as a JSON key.
-                string escapedVersion = Regex.Escape(version);
-                var versionRegex = new Regex($@"""{escapedVersion}""\s*:");
-                return versionRegex.IsMatch(json);
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         private static string ReadLocalPackageJson(string packageId)
