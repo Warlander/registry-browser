@@ -70,7 +70,15 @@ namespace Warlogic.RegistryBrowser
 
             var actionRow = new VisualElement();
             actionRow.style.flexDirection = FlexDirection.Row;
-            actionRow.style.marginBottom = 10;
+            actionRow.style.flexWrap = Wrap.Wrap;
+            actionRow.style.backgroundColor = new Color(0f, 0f, 0f, 0.1f);
+            actionRow.style.paddingTop = 8;
+            actionRow.style.paddingBottom = 8;
+            actionRow.style.paddingLeft = 8;
+            actionRow.style.paddingRight = 8;
+            actionRow.style.borderBottomWidth = 1;
+            actionRow.style.borderBottomColor = new Color(0.3f, 0.3f, 0.3f, 1f);
+            actionRow.style.marginBottom = 12;
             _detailContent.Add(actionRow);
 
             _addButton = new Button(OnAddToProjectClicked) { text = "Add to project" };
