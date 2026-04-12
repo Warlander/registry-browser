@@ -12,6 +12,7 @@ namespace Warlogic.RegistryBrowser
         private string _packageId;
         private string _displayName;
         private string _localVersion;
+        private string _currentRegistryVersion;
         private bool _isRepublish;
         private IReadOnlyList<RegistryScope> _candidateRegistries;
         private string _preselectedRegistryUrl;
@@ -21,13 +22,14 @@ namespace Warlogic.RegistryBrowser
         private PopupField<string> _registryDropdown;
 
         public static void Open(string packageId, string displayName, string localVersion,
-            bool isRepublish, IReadOnlyList<RegistryScope> candidateRegistries,
+            string currentRegistryVersion, bool isRepublish, IReadOnlyList<RegistryScope> candidateRegistries,
             string preselectedRegistryUrl, Action onPublishCompleted)
         {
             var window = CreateInstance<PackagePublishWindow>();
             window._packageId = packageId;
             window._displayName = displayName;
             window._localVersion = localVersion;
+            window._currentRegistryVersion = currentRegistryVersion;
             window._isRepublish = isRepublish;
             window._candidateRegistries = candidateRegistries;
             window._preselectedRegistryUrl = preselectedRegistryUrl;
@@ -54,7 +56,7 @@ namespace Warlogic.RegistryBrowser
 
             AddInfoRow(root, "Package ID", _packageId);
 
-            string currentVersionText = _isRepublish ? _localVersion : "Not published";
+            string currentVersionText = !string.IsNullOrEmpty(_currentRegistryVersion) ? _currentRegistryVersion : "Not published";
             AddInfoRow(root, "Current version", currentVersionText);
             AddInfoRow(root, "Version to publish", _localVersion);
 

@@ -18,27 +18,30 @@ namespace Warlogic.RegistryBrowser
         public bool CanPublish { get; }
         public string ErrorMessage { get; }
         public string LocalVersion { get; }
+        public string CurrentRegistryVersion { get; }
         public bool IsRepublish { get; }
         public IReadOnlyList<RegistryScope> CandidateRegistries { get; }
         public string RegistryUrl { get; }
 
         private PublishPreflightResult(bool canPublish, string errorMessage, string localVersion,
-            bool isRepublish, IReadOnlyList<RegistryScope> candidateRegistries, string registryUrl)
+            string currentRegistryVersion, bool isRepublish,
+            IReadOnlyList<RegistryScope> candidateRegistries, string registryUrl)
         {
             CanPublish = canPublish;
             ErrorMessage = errorMessage;
             LocalVersion = localVersion;
+            CurrentRegistryVersion = currentRegistryVersion;
             IsRepublish = isRepublish;
             CandidateRegistries = candidateRegistries;
             RegistryUrl = registryUrl;
         }
 
         public static PublishPreflightResult Fail(string errorMessage)
-            => new PublishPreflightResult(false, errorMessage, null, false, null, null);
+            => new PublishPreflightResult(false, errorMessage, null, null, false, null, null);
 
-        public static PublishPreflightResult Success(string localVersion, bool isRepublish,
-            IReadOnlyList<RegistryScope> candidateRegistries, string registryUrl)
-            => new PublishPreflightResult(true, null, localVersion, isRepublish, candidateRegistries, registryUrl);
+        public static PublishPreflightResult Success(string localVersion, string currentRegistryVersion,
+            bool isRepublish, IReadOnlyList<RegistryScope> candidateRegistries, string registryUrl)
+            => new PublishPreflightResult(true, null, localVersion, currentRegistryVersion, isRepublish, candidateRegistries, registryUrl);
     }
 
     public static class PackagePublishOperations
@@ -113,7 +116,8 @@ namespace Warlogic.RegistryBrowser
                 }
             }
 
-            return PublishPreflightResult.Success(localVersion, isRepublish, candidates, registryUrl);
+            string currentRegistryVersion = string.IsNullOrEmpty(details.LatestVersion) ? null : details.LatestVersion;
+            return PublishPreflightResult.Success(localVersion, currentRegistryVersion, isRepublish, candidates, registryUrl);
         }
 
         public static async Task<string> PackAsync(string packageId)

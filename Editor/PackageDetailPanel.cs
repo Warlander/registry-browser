@@ -338,6 +338,7 @@ namespace Warlogic.RegistryBrowser
                     _currentSummary.Id,
                     _currentSummary.DisplayName,
                     preflight.LocalVersion,
+                    preflight.CurrentRegistryVersion,
                     preflight.IsRepublish,
                     preflight.CandidateRegistries,
                     preflight.RegistryUrl,
