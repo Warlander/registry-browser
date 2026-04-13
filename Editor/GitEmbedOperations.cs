@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEditor;
 using UnityEngine;
 
 namespace Warlogic.RegistryBrowser
@@ -96,6 +97,30 @@ namespace Warlogic.RegistryBrowser
 
             string output = await RunGitOutputAsync("status --porcelain", absPath);
             return !string.IsNullOrWhiteSpace(output);
+        }
+
+        public static bool IsEmbedDirectoryInUse(string packageId, out string lockedFile)
+        {
+            lockedFile = null;
+            string absPath = GetEmbedAbsolutePath(packageId);
+            if (!Directory.Exists(absPath))
+                return false;
+
+            AssetDatabase.ReleaseCachedFileHandles();
+
+            foreach (string file in Directory.GetFiles(absPath, "*", SearchOption.AllDirectories))
+            {
+                try
+                {
+                    using var _ = File.Open(file, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                }
+                catch (IOException)
+                {
+                    lockedFile = file;
+                    return true;
+                }
+            }
+            return false;
         }
 
         public static Task RemoveEmbedAsync(string packageId)

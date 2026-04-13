@@ -15,5 +15,8 @@
   "repository": {
     "url": "https://github.com/Warlander/registry-browser.git",
     "type": "git"
+  },
+  "dependencies": {
+    "com.warlogic.utils.markdown": "1.1.0"
   }
 }

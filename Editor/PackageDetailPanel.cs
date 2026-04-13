@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Warlogic.Utils.Markdown;
 
 namespace Warlogic.RegistryBrowser
 {
@@ -424,6 +426,16 @@ namespace Warlogic.RegistryBrowser
         {
             try
             {
+                if (GitEmbedOperations.IsEmbedDirectoryInUse(_currentSummary.Id, out string lockedFile))
+                {
+                    EditorUtility.DisplayDialog(
+                        "Cannot De-embed",
+                        $"The package directory has locked files and cannot be removed.\n\nLocked file: {Path.GetFileName(lockedFile)}\n\nClose any applications accessing the package (IDE, file explorer, etc.) and try again.",
+                        "OK");
+                    OnOperationCompleted();
+                    return;
+                }
+
                 await GitEmbedOperations.RemoveEmbedAsync(_currentSummary.Id);
                 PackageManifestEditor.SetRegistryVersion(_currentSummary.Id, targetVersion);
             }
@@ -503,7 +515,12 @@ namespace Warlogic.RegistryBrowser
             foreach (KeyValuePair<string, VisualElement> entry in _versionChangelogLabels)
             {
                 if (_changelogCache.TryGetValue(entry.Key, out string text) && !string.IsNullOrEmpty(text))
-                    RenderChangelog(entry.Value, text);
+                {
+                    entry.Value.Clear();
+                    var tokens = new MarkdownLexer().Tokenize(text);
+                    var doc = new MarkdownBlockParser(new MarkdownInlineParser()).Parse(tokens);
+                    entry.Value.Add(new MarkdownVisualElementRenderer().Render(doc));
+                }
                 else
                     SetChangelogStatus(entry.Value, "No changelog available.");
             }
@@ -515,42 +532,6 @@ namespace Warlogic.RegistryBrowser
             var label = new Label(message);
             label.style.whiteSpace = WhiteSpace.Normal;
             container.Add(label);
-        }
-
-        private static void RenderChangelog(VisualElement container, string text)
-        {
-            container.Clear();
-            string[] lines = text.Split('\n');
-            var bodyLines = new List<string>();
-
-            void FlushBody()
-            {
-                string body = string.Join("\n", bodyLines).Trim();
-                bodyLines.Clear();
-                if (string.IsNullOrEmpty(body))
-                    return;
-                var label = new Label(body);
-                label.style.whiteSpace = WhiteSpace.Normal;
-                container.Add(label);
-            }
-
-            foreach (string line in lines)
-            {
-                if (line.StartsWith("### "))
-                {
-                    FlushBody();
-                    var header = new Label(line.Substring(4).Trim());
-                    header.style.unityFontStyleAndWeight = FontStyle.Bold;
-                    header.style.marginTop = 6;
-                    header.style.marginBottom = 2;
-                    container.Add(header);
-                }
-                else
-                {
-                    bodyLines.Add(line);
-                }
-            }
-            FlushBody();
         }
 
         private static Label AddDetailRow(VisualElement parent, string fieldName)

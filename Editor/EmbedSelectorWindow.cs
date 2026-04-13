@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Warlogic.Utils.Markdown;
 
 namespace Warlogic.RegistryBrowser
 {
@@ -155,7 +156,11 @@ namespace Warlogic.RegistryBrowser
                 _changelogContainer.Add(versionHeader);
 
                 if (changelogs.TryGetValue(version, out string text) && !string.IsNullOrEmpty(text))
-                    PackageVersionSelectorWindow.RenderChangelog(_changelogContainer, text);
+                {
+                    var tokens = new MarkdownLexer().Tokenize(text);
+                    var doc = new MarkdownBlockParser(new MarkdownInlineParser()).Parse(tokens);
+                    _changelogContainer.Add(new MarkdownVisualElementRenderer().Render(doc));
+                }
                 else
                     SetSectionStatus(_changelogContainer, "No changelog available.");
 

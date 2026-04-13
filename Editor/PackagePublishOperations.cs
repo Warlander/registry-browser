@@ -53,6 +53,15 @@ namespace Warlogic.RegistryBrowser
         public static async Task<PublishPreflightResult> RunPreflightAsync(
             string packageId, PackageDetails details, IReadOnlyList<RegistryScope> registries)
         {
+            // 0. Check embed directory is not locked by another process
+            if (GitEmbedOperations.IsEmbedded(packageId) &&
+                GitEmbedOperations.IsEmbedDirectoryInUse(packageId, out string lockedFile))
+            {
+                return PublishPreflightResult.Fail(
+                    $"Cannot publish: the package directory has locked files " +
+                    $"({Path.GetFileName(lockedFile)}). Close any applications accessing the package and try again.");
+            }
+
             // 1. Check for uncommitted git changes
             if (GitEmbedOperations.HasGitRepo(packageId))
             {

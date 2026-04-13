@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Warlogic.Utils.Markdown;
 
 namespace Warlogic.RegistryBrowser
 {
@@ -186,7 +187,11 @@ namespace Warlogic.RegistryBrowser
                 _changelogContainer.Add(versionHeader);
 
                 if (changelogs.TryGetValue(version, out string text) && !string.IsNullOrEmpty(text))
-                    RenderChangelog(_changelogContainer, text);
+                {
+                    var tokens = new MarkdownLexer().Tokenize(text);
+                    var doc = new MarkdownBlockParser(new MarkdownInlineParser()).Parse(tokens);
+                    _changelogContainer.Add(new MarkdownVisualElementRenderer().Render(doc));
+                }
                 else
                     SetSectionStatus(_changelogContainer, "No changelog available.");
 
@@ -213,39 +218,5 @@ namespace Warlogic.RegistryBrowser
             parent.Add(label);
         }
 
-        internal static void RenderChangelog(VisualElement container, string text)
-        {
-            string[] lines = text.Split('\n');
-            var bodyLines = new List<string>();
-
-            void FlushBody()
-            {
-                string body = string.Join("\n", bodyLines).Trim();
-                bodyLines.Clear();
-                if (string.IsNullOrEmpty(body))
-                    return;
-                var label = new Label(body);
-                label.style.whiteSpace = WhiteSpace.Normal;
-                container.Add(label);
-            }
-
-            foreach (string line in lines)
-            {
-                if (line.StartsWith("### "))
-                {
-                    FlushBody();
-                    var header = new Label(line.Substring(4).Trim());
-                    header.style.unityFontStyleAndWeight = FontStyle.Bold;
-                    header.style.marginTop = 6;
-                    header.style.marginBottom = 2;
-                    container.Add(header);
-                }
-                else
-                {
-                    bodyLines.Add(line);
-                }
-            }
-            FlushBody();
-        }
     }
 }
