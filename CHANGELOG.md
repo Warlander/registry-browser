@@ -4,6 +4,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-04-14
+
+### Added
+- De-embed and publish operations now check whether the target directory is in use before proceeding, preventing errors on Windows when files are locked.
+
+### Changed
+- Changelog rendering now uses the `com.warlogic.utils.markdown` package instead of the browser's own internal Markdown logic.
+- Updated `com.warlogic.utils.markdown` dependency to 1.1.0.
+
 ## [1.2.0] - 2026-04-12
 
 ### Changed
