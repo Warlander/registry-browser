@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEditor;
@@ -108,7 +109,9 @@ namespace Warlogic.RegistryBrowser
 
             AssetDatabase.ReleaseCachedFileHandles();
 
-            foreach (string file in Directory.GetFiles(absPath, "*", SearchOption.AllDirectories))
+            string gitDir = Path.Combine(absPath, ".git") + Path.DirectorySeparatorChar;
+            foreach (string file in Directory.GetFiles(absPath, "*", SearchOption.AllDirectories)
+                .Where(f => !f.StartsWith(gitDir, StringComparison.OrdinalIgnoreCase)))
             {
                 try
                 {
