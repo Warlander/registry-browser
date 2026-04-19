@@ -17,7 +17,7 @@ https://github.com/Warlander/registry-browser.git
 
 To install a specific release, append the tag:
 ```
-https://github.com/Warlander/registry-browser.git#1.3.0
+https://github.com/Warlander/registry-browser.git#1.4.0
 ```
 
 ## Via Scoped Registry
@@ -34,7 +34,7 @@ Add the Warlogic registry to your `Packages/manifest.json`:
     }
   ],
   "dependencies": {
-    "com.warlogic.registrybrowser": "1.3.0"
+    "com.warlogic.registrybrowser": "1.4.0"
   }
 }
 ```
