@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-04-19
+
+### Changed
+- Updated `com.warlogic.utils.markdown` dependency to 1.2.0. Explicitly reference the new runtime assembly (`Warlogic.Utils.Markdown`) in addition to the editor assembly, required after the markdown package split its types into separate runtime and editor assemblies.
+
 ## [1.3.0] - 2026-04-14
 
 ### Added

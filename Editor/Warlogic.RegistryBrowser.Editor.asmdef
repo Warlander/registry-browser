@@ -1,7 +1,7 @@
 {
     "name": "Warlogic.RegistryBrowser.Editor",
     "rootNamespace": "",
-    "references": ["Warlogic.Utils.Markdown.Editor"],
+    "references": ["Warlogic.Utils.Markdown.Editor", "Warlogic.Utils.Markdown"],
     "includePlatforms": [
         "Editor"
     ],
