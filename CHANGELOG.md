@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-04-23
+
+### Added
+- Added support for display of implicit package references. Packages that are installed as transitive dependencies of other packages (but not directly referenced in the project manifest) now display with a `#` indicator and can be explicitly added or embedded.
+
 ## [1.4.0] - 2026-04-19
 
 ### Changed
