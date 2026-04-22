@@ -235,14 +235,15 @@ namespace Warlogic.RegistryBrowser
         private void UpdateActionButtons()
         {
             bool notInProject = _currentSummary.Status == PackageInstallStatus.NotInProject;
+            bool implicitlyReferenced = _currentSummary.Status == PackageInstallStatus.ImplicitlyReferenced;
             bool fromRegistry = _currentSummary.Status == PackageInstallStatus.InstalledFromRegistry;
             bool embedded = _currentSummary.Status == PackageInstallStatus.Embedded;
             bool localOnly = _currentSummary.Status == PackageInstallStatus.LocalOnly;
 
-            _addButton.style.display = notInProject ? DisplayStyle.Flex : DisplayStyle.None;
+            _addButton.style.display = (notInProject || implicitlyReferenced) ? DisplayStyle.Flex : DisplayStyle.None;
             _removeButton.style.display = fromRegistry ? DisplayStyle.Flex : DisplayStyle.None;
             _changeVersionButton.style.display = fromRegistry ? DisplayStyle.Flex : DisplayStyle.None;
-            _embedButton.style.display = (notInProject || fromRegistry) ? DisplayStyle.Flex : DisplayStyle.None;
+            _embedButton.style.display = (notInProject || implicitlyReferenced || fromRegistry) ? DisplayStyle.Flex : DisplayStyle.None;
             _deEmbedButton.style.display = embedded ? DisplayStyle.Flex : DisplayStyle.None;
             _deEmbedButton.SetEnabled(true);
             _deleteLocalButton.style.display = localOnly ? DisplayStyle.Flex : DisplayStyle.None;

@@ -172,6 +172,12 @@ namespace Warlogic.RegistryBrowser
                     statusIcon.style.color = new UnityEngine.Color(0.85f, 0.25f, 0.25f);
                     statusIcon.tooltip = "Package not present in the project";
                     break;
+                case PackageInstallStatus.ImplicitlyReferenced:
+                    statusIcon.text = "#";
+                    statusIcon.style.fontSize = 20;
+                    statusIcon.style.color = new UnityEngine.Color(0.35f, 0.55f, 0.9f);
+                    statusIcon.tooltip = "Package present in the project, implicitly referenced";
+                    break;
                 case PackageInstallStatus.InstalledFromRegistry:
                     statusIcon.text = "\u2713";
                     statusIcon.style.color = new UnityEngine.Color(0.35f, 0.75f, 0.35f);

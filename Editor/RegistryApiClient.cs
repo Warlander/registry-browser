@@ -39,17 +39,19 @@ namespace Warlogic.RegistryBrowser
         public async Task<IReadOnlyList<PackageSummary>> FetchPackagesAsync(IReadOnlyList<RegistryScope> registries)
         {
             SearchRequest searchRequest = Client.SearchAll(false);
-            ListRequest listRequest = Client.List(false);
+            ListRequest listRequest = Client.List(false, true);
 
             UpmPackageInfo[] searchResults = await WaitForRequestAsync(searchRequest);
             PackageCollection installedPackages = await WaitForListRequestAsync(listRequest);
 
             var installedSources = new Dictionary<string, PackageSource>();
             var installedVersions = new Dictionary<string, string>();
+            var installedDirectDeps = new Dictionary<string, bool>();
             foreach (UpmPackageInfo pkg in installedPackages)
             {
                 installedSources[pkg.name] = pkg.source;
                 installedVersions[pkg.name] = pkg.version;
+                installedDirectDeps[pkg.name] = pkg.isDirectDependency;
             }
 
             var summaries = new List<PackageSummary>();
@@ -65,8 +67,10 @@ namespace Warlogic.RegistryBrowser
                 else if (source == PackageSource.Embedded ||
                          (source == PackageSource.Local && GitEmbedOperations.IsEmbedded(pkg.name)))
                     status = PackageInstallStatus.Embedded;
-                else
+                else if (installedDirectDeps.TryGetValue(pkg.name, out bool isDirect) && isDirect)
                     status = PackageInstallStatus.InstalledFromRegistry;
+                else
+                    status = PackageInstallStatus.ImplicitlyReferenced;
 
                 string installedVersion = installedVersions.TryGetValue(pkg.name, out string iv) ? iv : null;
                 summaries.Add(new PackageSummary(pkg.name, pkg.displayName, pkg.description, pkg.version, match.RegistryUrl, status, installedVersion));
