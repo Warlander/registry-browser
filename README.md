@@ -4,6 +4,8 @@ Editor tool for browsing, installing, updating, and embedding packages from UPM 
 
 The main goal of this tool is to enable faster working with packages - Unity's built-in package manager doesn't offer any functionality to embed and work on packages, this tool makes it very easy and automated process.
 
+<img width="912" height="598" alt="image" src="https://github.com/user-attachments/assets/763d5c9c-6032-4a2b-a53c-70f92fc964e2" />
+
 # Installation
 
 ## Via Git URL
