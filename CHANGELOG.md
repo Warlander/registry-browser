@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-05-01
+
+### Fixed
+- Publishing preflight no longer falsely rejects packages whose `package.json` fields contain escaped characters (e.g. `\n` in descriptions).
+
 ## [1.5.0] - 2026-04-23
 
 ### Added

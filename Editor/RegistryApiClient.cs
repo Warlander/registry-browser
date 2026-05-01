@@ -137,7 +137,7 @@ namespace Warlogic.RegistryBrowser
 
         private static string ParsePackageJsonField(string json, string field)
         {
-            var regex = new Regex($@"""{Regex.Escape(field)}""\s*:\s*""([^""\\]*)""");
+            var regex = new Regex($@"""{Regex.Escape(field)}""\s*:\s*""((?:[^""\\]|\\.)*)""");
             Match match = regex.Match(json);
             return match.Success ? match.Groups[1].Value : null;
         }
