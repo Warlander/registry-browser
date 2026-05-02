@@ -104,14 +104,27 @@ namespace Warlogic.RegistryBrowser
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("{");
             sb.AppendLine($"  \"name\": \"{name}\",");
+            sb.AppendLine($"  \"rootNamespace\": \"{name}\",");
 
-            if (references != null && references.Length > 0)
+            var allReferences = new System.Collections.Generic.List<string>();
+            if (isTest)
+            {
+                allReferences.Add("UnityEngine.TestRunner");
+                allReferences.Add("UnityEditor.TestRunner");
+            }
+            if (references != null)
+            {
+                foreach (string r in references)
+                    allReferences.Add(r);
+            }
+
+            if (allReferences.Count > 0)
             {
                 sb.AppendLine("  \"references\": [");
-                for (int i = 0; i < references.Length; i++)
+                for (int i = 0; i < allReferences.Count; i++)
                 {
-                    string comma = i < references.Length - 1 ? "," : "";
-                    sb.AppendLine($"    \"{references[i]}\"{comma}");
+                    string comma = i < allReferences.Count - 1 ? "," : "";
+                    sb.AppendLine($"    \"{allReferences[i]}\"{comma}");
                 }
                 sb.AppendLine("  ],");
             }
@@ -126,13 +139,21 @@ namespace Warlogic.RegistryBrowser
                 sb.AppendLine("  \"includePlatforms\": [],");
 
             sb.AppendLine("  \"excludePlatforms\": [],");
-            sb.AppendLine($"  \"autoReferenced\": {(isTest ? "false" : "true")},");
+            sb.AppendLine("  \"allowUnsafeCode\": false,");
 
             if (isTest)
-                sb.AppendLine("  \"optionalUnityReferences\": [\"TestAssemblies\"]");
-            else
-                sb.AppendLine("  \"optionalUnityReferences\": []");
+            {
+                sb.AppendLine("  \"overrideReferences\": true,");
+                sb.AppendLine("  \"precompiledReferences\": [");
+                sb.AppendLine("    \"nunit.framework.dll\"");
+                sb.AppendLine("  ],");
+            }
 
+            sb.AppendLine($"  \"autoReferenced\": {(isTest ? "false" : "true")},");
+            sb.AppendLine("  \"defineConstraints\": [],");
+            sb.AppendLine("  \"versionDefines\": [],");
+            sb.AppendLine("  \"noEngineReferences\": false,");
+            sb.AppendLine("  \"optionalUnityReferences\": []");
             sb.Append("}");
             return sb.ToString();
         }
