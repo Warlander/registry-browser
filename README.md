@@ -41,8 +41,7 @@ Add the Warlogic registry to your `Packages/manifest.json`:
 }
 ```
 
-Alternatively, open **Window → Package Manager**, click **+**, choose
-**Add package by name**, and enter `com.warlogic.registrybrowser`.
+Then open **Window > Package Manager** and look for `com.warlogic.registrybrowser`.
 
 # Prerequisites
 
