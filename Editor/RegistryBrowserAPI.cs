@@ -5,6 +5,58 @@ using System.Threading.Tasks;
 
 namespace Warlogic.RegistryBrowser
 {
+    public readonly struct StatusResult
+    {
+        public IReadOnlyList<RegistryStatusEntry> Registries { get; }
+        public IReadOnlyList<PackageStatusEntry> LocalOnlyPackages { get; }
+        public IReadOnlyList<string> Errors { get; }
+
+        public StatusResult(IReadOnlyList<RegistryStatusEntry> registries, IReadOnlyList<PackageStatusEntry> localOnlyPackages, IReadOnlyList<string> errors)
+        {
+            Registries = registries;
+            LocalOnlyPackages = localOnlyPackages;
+            Errors = errors;
+        }
+    }
+
+    public readonly struct RegistryStatusEntry
+    {
+        public string Scope { get; }
+        public string Url { get; }
+        public IReadOnlyList<PackageStatusEntry> Packages { get; }
+
+        public RegistryStatusEntry(string scope, string url, IReadOnlyList<PackageStatusEntry> packages)
+        {
+            Scope = scope;
+            Url = url;
+            Packages = packages;
+        }
+    }
+
+    public readonly struct PackageStatusEntry
+    {
+        public string Id { get; }
+        public string DisplayName { get; }
+        public string Description { get; }
+        public string LatestVersion { get; }
+        public string InstalledVersion { get; }
+        public string Status { get; }
+        public string GitBranch { get; }
+        public bool? HasUncommittedChanges { get; }
+
+        public PackageStatusEntry(string id, string displayName, string description, string latestVersion, string installedVersion, string status, string gitBranch = null, bool? hasUncommittedChanges = null)
+        {
+            Id = id;
+            DisplayName = displayName;
+            Description = description;
+            LatestVersion = latestVersion;
+            InstalledVersion = installedVersion;
+            Status = status;
+            GitBranch = gitBranch;
+            HasUncommittedChanges = hasUncommittedChanges;
+        }
+    }
+
     public static class RegistryBrowserAPI
     {
         public static async Task EmbedAsync(string packageId, string repositoryUrl = null, string commitSha = null)
@@ -135,6 +187,100 @@ namespace Warlogic.RegistryBrowser
             }
 
             await LocalPackageCreator.CreatePackageAsync(packageId, displayName, initGit);
+        }
+
+        public static async Task<StatusResult> GetStatusAsync(string filterScope = null, string filterPackageId = null)
+        {
+            IReadOnlyList<RegistryScope> registries = RegistryBrowserConfig.LoadRegistries();
+            var apiClient = new RegistryApiClient();
+            var errors = new List<string>();
+
+            IReadOnlyList<PackageSummary> registryPackages;
+            try
+            {
+                registryPackages = await apiClient.FetchPackagesAsync(registries);
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"Failed to fetch registry packages: {ex.Message}");
+                registryPackages = Array.Empty<PackageSummary>();
+            }
+
+            IReadOnlyList<PackageSummary> localOnlyPackages;
+            try
+            {
+                localOnlyPackages = await apiClient.ScanLocalOnlyPackagesAsync(registryPackages);
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"Failed to scan local-only packages: {ex.Message}");
+                localOnlyPackages = Array.Empty<PackageSummary>();
+            }
+
+            var packagesByRegistry = new Dictionary<string, List<PackageStatusEntry>>();
+
+            foreach (PackageSummary pkg in registryPackages)
+            {
+                if (!string.IsNullOrEmpty(filterPackageId) && pkg.Id != filterPackageId)
+                    continue;
+
+                string registryUrl = pkg.RegistryUrl;
+
+                if (!packagesByRegistry.TryGetValue(registryUrl, out List<PackageStatusEntry> list))
+                {
+                    list = new List<PackageStatusEntry>();
+                    packagesByRegistry[registryUrl] = list;
+                }
+
+                list.Add(await CreatePackageStatusEntryAsync(pkg));
+            }
+
+            var registryEntries = new List<RegistryStatusEntry>();
+            foreach (RegistryScope reg in registries)
+            {
+                if (!string.IsNullOrEmpty(filterScope) && reg.Scope != filterScope)
+                    continue;
+
+                if (!packagesByRegistry.TryGetValue(reg.RegistryUrl, out List<PackageStatusEntry> packages))
+                {
+                    packages = new List<PackageStatusEntry>();
+                }
+
+                registryEntries.Add(new RegistryStatusEntry(reg.Scope, reg.RegistryUrl, packages));
+            }
+
+            var localOnlyEntries = new List<PackageStatusEntry>();
+            foreach (PackageSummary pkg in localOnlyPackages)
+            {
+                if (!string.IsNullOrEmpty(filterPackageId) && pkg.Id != filterPackageId)
+                    continue;
+
+                localOnlyEntries.Add(await CreatePackageStatusEntryAsync(pkg));
+            }
+
+            return new StatusResult(registryEntries, localOnlyEntries, errors);
+        }
+
+        private static async Task<PackageStatusEntry> CreatePackageStatusEntryAsync(PackageSummary pkg)
+        {
+            string gitBranch = null;
+            bool? hasUncommittedChanges = null;
+
+            if (pkg.Status == PackageInstallStatus.Embedded && GitEmbedOperations.HasGitRepo(pkg.Id))
+            {
+                gitBranch = await GitEmbedOperations.GetCurrentBranchAsync(pkg.Id);
+                hasUncommittedChanges = await GitEmbedOperations.EmbedHasChangesAsync(pkg.Id);
+            }
+
+            return new PackageStatusEntry(
+                pkg.Id,
+                pkg.DisplayName,
+                pkg.Description,
+                pkg.LatestVersion,
+                pkg.InstalledVersion,
+                pkg.Status.ToString(),
+                gitBranch,
+                hasUncommittedChanges);
         }
 
         private static async Task<string> ResolveRepositoryUrlAsync(string packageId)

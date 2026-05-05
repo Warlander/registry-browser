@@ -4,6 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-05-06
+
+### Added
+- `RegistryBrowserAPI.GetStatusAsync()` returns the full state of configured registries and their packages, including install status, installed version, latest version, and (for embedded packages) current Git branch and dirty-state flag.
+- New result structs `StatusResult`, `RegistryStatusEntry`, and `PackageStatusEntry` for structured status responses.
+
 ## [1.6.0] - 2026-05-06
 
 ### Added
