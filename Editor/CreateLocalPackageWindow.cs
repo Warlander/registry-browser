@@ -11,10 +11,12 @@ namespace Warlogic.RegistryBrowser
         private static readonly Regex ValidPackageIdRegex = new Regex(@"^[a-z0-9]+(\.[a-z0-9]+)*$", RegexOptions.Compiled);
 
         private TextField _packageIdField;
-        private Label _displayNamePreview;
+        private TextField _displayNameField;
         private Label _validationLabel;
         private Button _createButton;
         private Action _onCreated;
+        private bool _displayNameManuallySet;
+        private bool _suppressNextDisplayNameEvent;
 
         public static void Open(Action onCreated)
         {
@@ -48,19 +50,20 @@ namespace Warlogic.RegistryBrowser
             idRow.Add(_packageIdField);
             root.Add(idRow);
 
-            var previewRow = new VisualElement();
-            previewRow.style.flexDirection = FlexDirection.Row;
-            previewRow.style.alignItems = Align.Center;
-            previewRow.style.marginBottom = 6;
+            var displayNameRow = new VisualElement();
+            displayNameRow.style.flexDirection = FlexDirection.Row;
+            displayNameRow.style.alignItems = Align.Center;
+            displayNameRow.style.marginBottom = 6;
 
-            var previewLabel = new Label("Display Name:");
-            previewLabel.style.minWidth = 100;
-            previewRow.Add(previewLabel);
+            var displayNameLabel = new Label("Display Name:");
+            displayNameLabel.style.minWidth = 100;
+            displayNameRow.Add(displayNameLabel);
 
-            _displayNamePreview = new Label();
-            _displayNamePreview.style.color = new Color(0.6f, 0.6f, 0.6f);
-            previewRow.Add(_displayNamePreview);
-            root.Add(previewRow);
+            _displayNameField = new TextField();
+            _displayNameField.style.flexGrow = 1;
+            _displayNameField.RegisterValueChangedCallback(OnDisplayNameChanged);
+            displayNameRow.Add(_displayNameField);
+            root.Add(displayNameRow);
 
             _validationLabel = new Label();
             _validationLabel.style.color = new Color(0.85f, 0.35f, 0.35f);
@@ -87,7 +90,11 @@ namespace Warlogic.RegistryBrowser
         private void OnPackageIdChanged(ChangeEvent<string> evt)
         {
             string id = evt.newValue ?? "";
-            _displayNamePreview.text = LocalPackageCreator.DeriveDisplayName(id);
+            if (!_displayNameManuallySet)
+            {
+                _suppressNextDisplayNameEvent = true;
+                _displayNameField.value = LocalPackageCreator.DeriveDisplayName(id);
+            }
 
             bool valid = !string.IsNullOrEmpty(id) && ValidPackageIdRegex.IsMatch(id);
             _createButton.SetEnabled(valid);
@@ -103,10 +110,20 @@ namespace Warlogic.RegistryBrowser
             }
         }
 
+        private void OnDisplayNameChanged(ChangeEvent<string> evt)
+        {
+            if (_suppressNextDisplayNameEvent)
+            {
+                _suppressNextDisplayNameEvent = false;
+                return;
+            }
+            _displayNameManuallySet = true;
+        }
+
         private async void OnCreateClicked()
         {
             string packageId = _packageIdField.value;
-            string displayName = LocalPackageCreator.DeriveDisplayName(packageId);
+            string displayName = _displayNameField.value;
 
             if (GitEmbedOperations.IsEmbedded(packageId))
             {
