@@ -4,6 +4,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-05-06
+
+### Added
+- Registry browser API (`RegistryBrowserAPI`) exposing programmatic access to browse, install, embed, de-embed, publish, and create packages.
+- Display name in **Create Local Package** window is now editable. It starts with a suggested value derived from the package ID, but once modified it no longer auto-updates when the package ID changes.
+
+### Fixed
+- Pre-commit git hook no longer rejects commits merely because `Packages/Embeds/` exists or the manifest references embedded packages. It now only blocks when staged changes to `manifest.json` or `packages-lock.json` actually introduce `file:Embeds/` references.
+
 ## [1.5.2] - 2026-05-02
 
 ### Fixed
