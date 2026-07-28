@@ -4,6 +4,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-07-29
+
+### Added
+- **Remove from project** action now works for embedded packages. Reuses the existing "Remove from project" button; it deletes the local embed directory and removes the dependency from `Packages/manifest.json` without reinstalling a registry version.
+- New `RegistryBrowserAPI.RemoveFromProjectAsync(string packageId, bool force = false)` method. For embedded packages it removes the embed and manifest entry; for registry-installed packages it delegates to `Client.Remove`. Refuses to remove embedded packages with uncommitted changes unless `force = true`.
+
+### Changed
+- The **Remove from project** button is now visible for both `InstalledFromRegistry` and `Embedded` packages.
+
 ## [1.7.0] - 2026-05-06
 
 ### Added
