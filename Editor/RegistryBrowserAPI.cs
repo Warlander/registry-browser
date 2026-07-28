@@ -114,6 +114,42 @@ namespace Warlogic.RegistryBrowser
             PackageManifestEditor.SetRegistryVersion(packageId, targetVersion);
         }
 
+        public static async Task RemoveFromProjectAsync(string packageId, bool force = false)
+        {
+            if (string.IsNullOrWhiteSpace(packageId))
+            {
+                throw new ArgumentException("Package ID cannot be empty.", nameof(packageId));
+            }
+
+            if (GitEmbedOperations.IsEmbedded(packageId))
+            {
+                if (GitEmbedOperations.IsEmbedDirectoryInUse(packageId, out string lockedFile))
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot remove: the package directory has locked files ({Path.GetFileName(lockedFile)}). " +
+                        "Close any applications accessing the package and try again.");
+                }
+
+                if (!force && GitEmbedOperations.HasGitRepo(packageId))
+                {
+                    bool hasChanges = await GitEmbedOperations.EmbedHasChangesAsync(packageId);
+                    if (hasChanges)
+                    {
+                        throw new InvalidOperationException(
+                            "Cannot remove: the package has uncommitted local changes. " +
+                            "Commit or discard changes before removing, or use force.");
+                    }
+                }
+
+                await GitEmbedOperations.RemoveEmbedAsync(packageId);
+                PackageManifestEditor.RemoveDependency(packageId);
+                return;
+            }
+
+            var apiClient = new RegistryApiClient();
+            await apiClient.RemovePackageAsync(packageId);
+        }
+
         public static async Task PublishAsync(string packageId, string registryUrl = null, bool confirmRepublish = false)
         {
             if (string.IsNullOrWhiteSpace(packageId))

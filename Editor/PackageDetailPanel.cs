@@ -241,7 +241,7 @@ namespace Warlogic.RegistryBrowser
             bool localOnly = _currentSummary.Status == PackageInstallStatus.LocalOnly;
 
             _addButton.style.display = (notInProject || implicitlyReferenced) ? DisplayStyle.Flex : DisplayStyle.None;
-            _removeButton.style.display = fromRegistry ? DisplayStyle.Flex : DisplayStyle.None;
+            _removeButton.style.display = (fromRegistry || embedded) ? DisplayStyle.Flex : DisplayStyle.None;
             _changeVersionButton.style.display = fromRegistry ? DisplayStyle.Flex : DisplayStyle.None;
             _embedButton.style.display = (notInProject || implicitlyReferenced || fromRegistry) ? DisplayStyle.Flex : DisplayStyle.None;
             _deEmbedButton.style.display = embedded ? DisplayStyle.Flex : DisplayStyle.None;
@@ -453,7 +453,15 @@ namespace Warlogic.RegistryBrowser
             _changeVersionButton.SetEnabled(false);
             try
             {
-                await _apiClient.RemovePackageAsync(_currentSummary.Id);
+                bool embedded = _currentSummary.Status == PackageInstallStatus.Embedded;
+                if (embedded)
+                {
+                    await RemoveEmbeddedAsync();
+                }
+                else
+                {
+                    await _apiClient.RemovePackageAsync(_currentSummary.Id);
+                }
             }
             catch (Exception ex)
             {
@@ -465,6 +473,33 @@ namespace Warlogic.RegistryBrowser
                 _changeVersionButton.SetEnabled(true);
             }
             OnOperationCompleted();
+        }
+
+        private async Task RemoveEmbeddedAsync()
+        {
+            string packageId = _currentSummary.Id;
+
+            if (GitEmbedOperations.IsEmbedDirectoryInUse(packageId, out string lockedFile))
+            {
+                EditorUtility.DisplayDialog(
+                    "Cannot Remove",
+                    $"The package directory has locked files and cannot be removed.\n\nLocked file: {Path.GetFileName(lockedFile)}\n\nClose any applications accessing the package (IDE, file explorer, etc.) and try again.",
+                    "OK");
+                return;
+            }
+
+            bool hasChanges = GitEmbedOperations.HasGitRepo(packageId)
+                && await GitEmbedOperations.EmbedHasChangesAsync(packageId);
+
+            string message = hasChanges
+                ? $"This will permanently remove \"{_currentSummary.DisplayName}\" from the project. Uncommitted local changes will be discarded. This cannot be undone."
+                : $"This will permanently remove \"{_currentSummary.DisplayName}\" from the project. This cannot be undone.";
+
+            bool confirmed = EditorUtility.DisplayDialog("Remove from project?", message, "Remove", "Cancel");
+            if (!confirmed)
+                return;
+
+            await RegistryBrowserAPI.RemoveFromProjectAsync(packageId, force: hasChanges);
         }
 
         private void OnOperationCompleted()
